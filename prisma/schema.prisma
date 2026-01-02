@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+enum PlatformRole {
+  SUPER_ADMIN
+  NONE
+}
+
+enum MembershipRole {
+  TENANT_ADMIN
+  LOCATION_ADMIN
+  REVIEWER
+  READ_ONLY
+}
+
+enum IncidentStatus {
+  DRAFT
+  SUBMITTED
+  PENDING_REVIEW
+  REVIEW_REQUIRED
+  BLOCKED
+}
+
+model Tenant {
+  id          String      @id @default(cuid())
+  name        String
+  slug        String      @unique
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  locations   Location[]
+  memberships Membership[]
+  incidents   Incident[]
+  auditLogs   AuditLog[]
+}
+
+model Location {
+  id        String     @id @default(cuid())
+  tenantId  String
+  name      String
+  address   String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  incidents Incident[]
+  memberships Membership[]
+}
+
+model User {
+  id            String        @id @default(cuid())
+  email         String        @unique
+  name          String
+  platformRole  PlatformRole  @default(NONE)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  memberships   Membership[]
+  auditLogs     AuditLog[]    @relation("UserAuditLogs")
+}
+
+model Membership {
+  id         String         @id @default(cuid())
+  userId     String
+  tenantId   String
+  locationId String?
+  role       MembershipRole
+  createdAt  DateTime       @default(now())
+
+  user    User     @relation(fields: [userId], references: [id])
+  tenant  Tenant   @relation(fields: [tenantId], references: [id])
+  location Location? @relation(fields: [locationId], references: [id])
+}
+
+model Incident {
+  id            String          @id @default(cuid())
+  tenantId      String
+  locationId    String
+  title         String
+  description   String
+  status        IncidentStatus  @default(DRAFT)
+  correlationId String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  tenant        Tenant          @relation(fields: [tenantId], references: [id])
+  location      Location        @relation(fields: [locationId], references: [id])
+  auditLogs     AuditLog[]
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  tenantId      String
+  actorUserId   String?
+  action        String
+  entityType    String
+  entityId      String
+  metadata      Json
+  correlationId String
+  createdAt     DateTime @default(now())
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  actor    User?  @relation(name: "UserAuditLogs", fields: [actorUserId], references: [id])
+}

@@ -1,0 +1,35 @@
+{
+  "name": "safer",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:generate": "prisma generate",
+    "prisma:seed": "prisma db seed",
+    "test": "npm run lint",
+    "lint": "eslint --ext .ts src"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.17.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/morgan": "^1.9.7",
+    "@types/node": "^20.12.12",
+    "@types/uuid": "^9.0.7",
+    "eslint": "^8.57.0",
+    "prisma": "^5.17.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.4.5"
+  }
+}
