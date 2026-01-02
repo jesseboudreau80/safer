@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Safer Intake (Scaffold)</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 960px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      header {
+        margin-bottom: 1.5rem;
+      }
+      .panel {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+      label {
+        display: block;
+        font-weight: bold;
+        margin-top: 0.5rem;
+      }
+      input, textarea {
+        width: 100%;
+        padding: 0.5rem;
+        margin-top: 0.25rem;
+      }
+      button {
+        margin-top: 0.75rem;
+        padding: 0.6rem 1.2rem;
+      }
+      code {
+        background: #f5f5f5;
+        padding: 0.1rem 0.3rem;
+        border-radius: 4px;
+      }
+      ul {
+        padding-left: 1.25rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Safer Core Scaffold</h1>
+      <p>AI-assisted. Human-approved. Fully auditable.</p>
+      <p>Use the seeded IDs to explore multi-tenant intake:</p>
+      <ul>
+        <li>Tenant: <code>tenant_acme</code></li>
+        <li>Locations: <code>loc_hq</code>, <code>loc_warehouse</code></li>
+        <li>Tenant Admin user: <code>user_tenant_admin</code></li>
+        <li>Location Admin user: <code>user_location_admin</code> (warehouse)</li>
+        <li>Reviewer user (read-only here): <code>user_reviewer</code></li>
+      </ul>
+      <p>Headers are enforced for every request and scoped to the tenant.</p>
+    </header>
+
+    <section class="panel">
+      <h2>Incident Intake</h2>
+      <form id="intake-form">
+        <label>Tenant ID</label>
+        <input name="tenantId" value="tenant_acme" required />
+        <label>User ID</label>
+        <input name="userId" value="user_tenant_admin" required />
+        <label>Correlation ID</label>
+        <input name="correlationId" value="" placeholder="auto-generate if empty" />
+        <label>Location ID</label>
+        <input name="locationId" value="loc_hq" required />
+        <label>Title</label>
+        <input name="title" value="" placeholder="Brief incident title" required />
+        <label>Description</label>
+        <textarea name="description" rows="3" placeholder="What happened?" required></textarea>
+        <button type="submit">Submit Incident</button>
+      </form>
+      <pre id="intake-result"></pre>
+    </section>
+
+    <section class="panel">
+      <h2>Existing Incidents</h2>
+      <form id="list-form">
+        <label>Tenant ID</label>
+        <input name="tenantId" value="tenant_acme" required />
+        <label>User ID</label>
+        <input name="userId" value="user_reviewer" required />
+        <label>Correlation ID</label>
+        <input name="correlationId" value="" placeholder="auto-generate if empty" />
+        <button type="submit">Load Incidents</button>
+      </form>
+      <pre id="list-result"></pre>
+    </section>
+
+    <script>
+      const randomId = () => crypto.randomUUID();
+
+      document.getElementById('intake-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(e.target).entries());
+        const correlationId = data.correlationId || randomId();
+        const payload = {
+          locationId: data.locationId,
+          title: data.title,
+          description: data.description,
+        };
+        const res = await fetch('/api/incidents', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-tenant-id': data.tenantId,
+            'x-user-id': data.userId,
+            'x-correlation-id': correlationId,
+          },
+          body: JSON.stringify(payload),
+        });
+        const text = await res.text();
+        document.getElementById('intake-result').textContent = `Status ${res.status}\n` + text;
+      });
+
+      document.getElementById('list-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(e.target).entries());
+        const correlationId = data.correlationId || randomId();
+        const res = await fetch('/api/incidents', {
+          headers: {
+            'x-tenant-id': data.tenantId,
+            'x-user-id': data.userId,
+            'x-correlation-id': correlationId,
+          },
+        });
+        const text = await res.text();
+        document.getElementById('list-result').textContent = `Status ${res.status}\n` + text;
+      });
+    </script>
+  </body>
+</html>
